@@ -25,6 +25,7 @@
 
 from __future__ import print_function
 from collections import namedtuple
+from functools import reduce
 from itertools import count
 import math
 import multiprocessing
@@ -40,6 +41,8 @@ import time
 # 'x' (other player), and whitespace (off-board border to make rules
 # implementation easier).  Coordinates are just indices in this string.
 # You can simply print(board) when debugging.
+from past.builtins import raw_input
+
 N = 13
 W = N + 2
 empty = "\n".join([(N+1)*' '] + N*[' '+N*'.'] + [(N+2)*' '])
@@ -143,13 +146,19 @@ def diag_neighbors(c):
 
 
 def board_put(board, c, p):
-    return board[:c] + p + board[c+1:]
+    if c is None:
+        return
+    try:
+        return board[:c] + p + board[c+1:]
+    except Exception as e:
+        print(e)
+        raise
 
 
 def floodfill(board, c):
     """ replace continuous-color area starting at c with special color # """
     # This is called so much that a bytearray is worthwhile...
-    byteboard = bytearray(board)
+    byteboard = bytearray(board, encoding='utf-8')
     p = byteboard[c]
     byteboard[c] = ord('#')
     fringe = [c]
@@ -159,7 +168,7 @@ def floodfill(board, c):
             if byteboard[d] == p:
                 byteboard[d] = ord('#')
                 fringe.append(d)
-    return str(byteboard)
+    return byteboard.decode("utf-8")
 
 
 # Regex that matches various kind of points adjecent to '#' (floodfilled) points
@@ -1023,7 +1032,8 @@ def game_io(computer_black=False):
                     continue
 
                 # Find the next node in the game tree and proceed there
-                nodes = filter(lambda n: n.pos.last == c, tree.children)
+                nodes = [ch for ch in tree.children if ch.pos.last == c]
+                # filter(lambda n: n.pos.last == c, tree.children)
                 if not nodes:
                     print('Bad move (rule violation)')
                     continue
