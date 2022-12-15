@@ -1,2 +1,2 @@
-patterns.*
 .idea
+__pycache__
